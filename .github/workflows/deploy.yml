@@ -40,18 +40,20 @@ jobs:
         passphrase: ${{ secrets.EC2_PASSPHRASE }}
         script: |
           echo "✅ Connected to EC2"
-
+    
           # Remove old file safely
           sudo rm -f /var/www/html/index.nginx-debian.html
-
+    
           # Move new file into place
           sudo mv /tmp/index.nginx-debian.html /var/www/html/index.nginx-debian.html
-
-          # Set ownership and permissions
-          sudo chown www-data:www-data /var/www/html/index.nginx-debian.html
-          sudo chmod 644 /var/www/html/index.nginx-debian.html
-
+    
+          # Ensure correct ownership
+          sudo chown -R www-data:www-data /var/www/html
+          # Ensure directories are executable and files are readable
+          sudo find /var/www/html -type d -exec chmod 755 {} \;
+          sudo find /var/www/html -type f -exec chmod 644 {} \;
+    
           # Reload Nginx
           sudo systemctl reload nginx
-
+    
           echo "✅ Deployment complete!"
