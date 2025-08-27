@@ -13,6 +13,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
       
+    - name: Check secrets
+      run: |
+        echo "EC2_HOST set? ${EC2_HOST:+yes}"
+        echo "EC2_USER set? ${EC2_USER:+yes}"
+        echo "EC2_KEY set? ${EC2_KEY:+yes}"
+      
     - name: Test SSH connection
       uses: appleboy/ssh-action@v1.0.3
       with:
@@ -20,7 +26,7 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
         script: |
-          echo "✅ Connected to EC2"
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Connected to EC2"
           uname -a
           
     - name: Copy HTML to EC2
