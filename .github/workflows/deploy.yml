@@ -41,7 +41,8 @@ jobs:
         passphrase: ${{ secrets.EC2_PASSPHRASE }}
         source: "index.nginx-debian.html"
         target: "/tmp/index.nginx-debian.html"
-    - name: Move file into nginx folder
+
+    - name: Move file into nginx folder safely
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.EC2_HOST }}
@@ -49,15 +50,25 @@ jobs:
         key: ${{ secrets.EC2_KEY }}
         passphrase: ${{ secrets.EC2_PASSPHRASE }}
         script: |
-          # Remove old file or directory in Nginx folder
-          sudo rm -rf /var/www/html/index.nginx-debian.html
-          
-          # Remove any leftover temp file/directory
-          sudo rm -rf /tmp/index.nginx-debian.html
-
-          # Move the new file into place
-          sudo mv /tmp/index.nginx-debian.html /var/www/html/index.nginx-debian.html
-
-          # Reload Nginx to apply changes
-          sudo systemctl reload nginx
-
+          # Check if uploaded file exists
+          if [ -f /tmp/index.nginx-debian.html ]; then
+              echo " File exists in /tmp, deploying..."
+              
+              # Remove old file or directory in Nginx folder
+              sudo rm -rf /var/www/html/index.nginx-debian.html
+              
+              # Move the new file into place
+              sudo mv /tmp/index.nginx-debian.html /var/www/html/index.nginx-debian.html
+              
+              # Set correct ownership and permissions
+              sudo chown www-data:www-data /var/www/html/index.nginx-debian.html
+              sudo chmod 644 /var/www/html/index.nginx-debian.html
+              
+              # Reload Nginx to apply changes
+              sudo systemctl reload nginx
+              
+              echo "Deployment complete!"
+          else
+              echo "Error: /tmp/index.nginx-debian.html does not exist!"
+              exit 1
+          fi
