@@ -19,6 +19,7 @@ jobs:
         echo "EC2_HOST set? ${EC2_HOST:+yes}"
         echo "EC2_USER set? ${EC2_USER:+yes}"
         echo "EC2_KEY set? ${EC2_KEY:+yes}"
+        echo "EC2_PASSPHRASE set? ${EC2_PASSPHRASE:+yes}"
       
     - name: Test SSH connection
       uses: appleboy/ssh-action@v1.0.3
@@ -26,6 +27,7 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
+        passphrase: ${{ secrets.EC2_PASSPHRASE }}
         script: |
           echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Connected to EC2"
           uname -a
@@ -36,6 +38,7 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
+        passphrase: ${{ secrets.EC2_PASSPHRASE }}
         source: "index.nginx-debian.html"
         target: "/tmp/index.nginx-debian.html"
 
@@ -45,6 +48,7 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_KEY }}
+        passphrase: ${{ secrets.EC2_PASSPHRASE }}
         script: |
           sudo mv /tmp/index.nginx-debian.html /var/www/html/index.nginx-debian.html
           sudo systemctl reload nginx
