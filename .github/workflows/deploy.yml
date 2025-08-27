@@ -50,5 +50,6 @@ jobs:
         key: ${{ secrets.EC2_KEY }}
         passphrase: ${{ secrets.EC2_PASSPHRASE }}
         script: |
+          sudo rm -f /var/www/html/index.nginx-debian.html
           sudo mv /tmp/index.nginx-debian.html /var/www/html/index.nginx-debian.html
           sudo systemctl reload nginx
