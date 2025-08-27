@@ -3,7 +3,7 @@ name: Deploy HTML to EC2
 on:
   push:
     branches:
-      - main   # runs only when you push to main
+      - main
 
 jobs:
   deploy:
@@ -13,14 +13,14 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
-      
+
     - name: Check secrets
       run: |
         echo "EC2_HOST set? ${EC2_HOST:+yes}"
         echo "EC2_USER set? ${EC2_USER:+yes}"
         echo "EC2_KEY set? ${EC2_KEY:+yes}"
         echo "EC2_PASSPHRASE set? ${EC2_PASSPHRASE:+yes}"
-      
+
     - name: Test SSH connection
       uses: appleboy/ssh-action@v1.0.3
       with:
@@ -29,10 +29,10 @@ jobs:
         key: ${{ secrets.EC2_KEY }}
         passphrase: ${{ secrets.EC2_PASSPHRASE }}
         script: |
-          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! Connected to EC2"
+          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Connected to EC2"
           uname -a
-          
-    - name: Copy HTML to EC2
+
+    - name: Copy HTML to EC2 (single file)
       uses: appleboy/scp-action@v0.1.7
       with:
         host: ${{ secrets.EC2_HOST }}
@@ -41,8 +41,9 @@ jobs:
         passphrase: ${{ secrets.EC2_PASSPHRASE }}
         source: "index.nginx-debian.html"
         target: "/tmp/index.nginx-debian.html"
+        strip_components: 0   # ensures it’s copied as a file
 
-    - name: Move file into nginx folder safely
+    - name: Deploy to Nginx
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.EC2_HOST }}
@@ -50,25 +51,25 @@ jobs:
         key: ${{ secrets.EC2_KEY }}
         passphrase: ${{ secrets.EC2_PASSPHRASE }}
         script: |
-          # Check if uploaded file exists
+          # Ensure /tmp file exists
           if [ -f /tmp/index.nginx-debian.html ]; then
-              echo " File exists in /tmp, deploying..."
-              
-              # Remove old file or directory in Nginx folder
+              echo "File exists, deploying..."
+
+              # Remove previous file or folder safely
               sudo rm -rf /var/www/html/index.nginx-debian.html
-              
-              # Move the new file into place
+
+              # Move new file
               sudo mv /tmp/index.nginx-debian.html /var/www/html/index.nginx-debian.html
-              
+
               # Set correct ownership and permissions
               sudo chown www-data:www-data /var/www/html/index.nginx-debian.html
               sudo chmod 644 /var/www/html/index.nginx-debian.html
-              
-              # Reload Nginx to apply changes
+
+              # Reload Nginx
               sudo systemctl reload nginx
-              
-              echo "Deployment complete!"
+
+              echo "!!!!!!!!!!!!!!!!!!!!!!!!!!Deployment complete!"
           else
-              echo "Error: /tmp/index.nginx-debian.html does not exist!"
+              echo " Error: /tmp/index.nginx-debian.html does not exist!"
               exit 1
           fi
