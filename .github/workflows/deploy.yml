@@ -21,7 +21,7 @@ jobs:
         echo "EC2_KEY set? ${EC2_KEY:+yes}"
         echo "EC2_PASSPHRASE set? ${EC2_PASSPHRASE:+yes}"
 
-    - name: Test SSH connection
+    - name: Deploy HTML to Nginx
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.EC2_HOST }}
@@ -29,47 +29,16 @@ jobs:
         key: ${{ secrets.EC2_KEY }}
         passphrase: ${{ secrets.EC2_PASSPHRASE }}
         script: |
-          echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Connected to EC2"
-          uname -a
+          echo "✅ Connected to EC2"
 
-    - name: Copy HTML to EC2 (single file)
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_KEY }}
-        passphrase: ${{ secrets.EC2_PASSPHRASE }}
-        source: "index.nginx-debian.html"
-        target: "/tmp/index.nginx-debian.html"
-        strip_components: 0   # ensures it’s copied as a file
+          # Copy directly from GitHub workspace to Nginx folder
+          sudo cp ~/github/workspace/index.nginx-debian.html /var/www/html/index.nginx-debian.html
 
-    - name: Deploy to Nginx
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_KEY }}
-        passphrase: ${{ secrets.EC2_PASSPHRASE }}
-        script: |
-          # Ensure /tmp file exists
-          if [ -f /tmp/index.nginx-debian.html ]; then
-              echo "File exists, deploying..."
+          # Set ownership and permissions
+          sudo chown www-data:www-data /var/www/html/index.nginx-debian.html
+          sudo chmod 644 /var/www/html/index.nginx-debian.html
 
-              # Remove previous file or folder safely
-              sudo rm -rf /var/www/html/index.nginx-debian.html
+          # Reload Nginx
+          sudo systemctl reload nginx
 
-              # Move new file
-              sudo mv /tmp/index.nginx-debian.html /var/www/html/index.nginx-debian.html
-
-              # Set correct ownership and permissions
-              sudo chown www-data:www-data /var/www/html/index.nginx-debian.html
-              sudo chmod 644 /var/www/html/index.nginx-debian.html
-
-              # Reload Nginx
-              sudo systemctl reload nginx
-
-              echo "!!!!!!!!!!!!!!!!!!!!!!!!!!Deployment complete!"
-          else
-              echo " Error: /tmp/index.nginx-debian.html does not exist!"
-              exit 1
-          fi
+          echo "✅ Deployment complete!"
